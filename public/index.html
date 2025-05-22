@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Formulario con MongoDB</title>
+</head>
+<body>
+  <h1>Gestión de Usuarios</h1>
+
+  <form id="formulario">
+    <input type="hidden" id="id" />
+    <label>Nombre: <input type="text" id="nombre" required /></label><br/>
+    <label>Email: <input type="email" id="email" required /></label><br/>
+    <button type="submit">Guardar</button>
+  </form>
+
+  <h2>Usuarios</h2>
+  <ul id="lista"></ul>
+
+  <script>
+    async function cargarUsuarios() {
+      const res = await fetch('/api/usuarios');
+      const data = await res.json();
+      const lista = document.getElementById('lista');
+      lista.innerHTML = '';
+      data.forEach(u => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>${u.nombre}</strong> (${u.email}) 
+          <button onclick='editar("${u._id}", "${u.nombre}", "${u.email}")'>Editar</button>
+          <button onclick='eliminar("${u._id}")'>Eliminar</button>
+        `;
+        lista.appendChild(li);
+      });
+    }
+
+    document.getElementById('formulario').addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = document.getElementById('id').value;
+      const nombre = document.getElementById('nombre').value;
+      const email = document.getElementById('email').value;
+
+      const metodo = id ? 'PUT' : 'POST';
+      const url = id ? `/api/usuarios/${id}` : '/api/usuarios';
+
+      await fetch(url, {
+        method: metodo,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email })
+      });
+
+      document.getElementById('formulario').reset();
+      cargarUsuarios();
+    });
+
+    async function eliminar(id) {
+      await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+      cargarUsuarios();
+    }
+
+    function editar(id, nombre, email) {
+      document.getElementById('id').value = id;
+      document.getElementById('nombre').value = nombre;
+      document.getElementById('email').value = email;
+    }
+
+    cargarUsuarios();
+  </script>
+</body>
+</html>
